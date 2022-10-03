@@ -1,9 +1,9 @@
 import scrapy
-from scrapy.spiders import CrawlSpider, Rule
-from scrapy.linkextractors import LinkExtractor
-from ..items import BrandsItem
+from ..items import BrandsItem, GenerationItem, ModelsItem
+# from helpers import detailsMapper
 
-class CarUrlSpider(CrawlSpider):
+
+class CarUrlSpider(scrapy.Spider):
     name = "cars_details"
     allowed_domains = ['www.auto-data.net']
     BASE_URL = "https://www.auto-data.net"
@@ -12,6 +12,9 @@ class CarUrlSpider(CrawlSpider):
         yield scrapy.Request(url="https://www.auto-data.net/en/allbrands", callback=self.parse_brands)
 
     def parse_brands(self, response):
+        '''
+        this is docs
+        '''
         brands = response.xpath('//a[@class="marki_blok"]')
         for brand in brands:
             brand_item = BrandsItem()
@@ -22,21 +25,40 @@ class CarUrlSpider(CrawlSpider):
             yield response.follow(f"{self.BASE_URL}{brand_url}", callback=self.parse_models)
 
     def parse_models(self, response):
-        models_urls = response.xpath('//a[@class="modeli"]/@href').getall()
+        models_urls = response.xpath('//a[@class="modeli"]')
         for model in models_urls:
-            yield response.follow(f"{self.BASE_URL}{model}", callback=self.parse_models)
+            model_item = ModelsItem()
+            model_item["name"] = model.xpath('strong/text()').get()
+            model_item["thumbnail"] = model.xpath('img/@src').get()
+            yield model_item
+            model_url = model.xpath("@href").get()
+            yield response.follow(f"{self.BASE_URL}{model_url}", callback=self.parse_models)
 
     def parse_generations(self, response):
-        generations_urls = response.xpath('//a[@class="position"]/@href').getall()
-        for gen in generations_urls:
-            yield response.follow(f"{self.BASE_URL}{gen}", callback=self.parse_car_details)
-    
+        generations_trs = response.xpath(
+            "//table[@class='generr']").xpath("tr[@class='f lred']")
+        for generation in generations_trs:
+            generation_item = GenerationItem()
+            generation_item["name"] = generation.xpath(
+                'th[@class="i"]/a[@class="position" and not(@rel = "nofollow")]/strong/text()'
+            ).get()
+            generation_item["thumnail_url"] = generation.xpath(
+                'th[@class="i"]/*/img/@src').get()
+            generation_item["start_year"], generation_item["end_year"] = generation.xpath(
+                'td[@class="i"]/*/strong[@class="end"]/text()'
+            ).get().split(' - ')
+            generation_item["body_type"] = generation.xpath(
+                'td[@class="i"]/*/strong[@class="chas"]/text()').get()
+            generation_item["details"] = generation.xpath(
+                'td[@class="i"]/*/span/text()').getall()
+            yield generation_item
+            generation_url = generation.xpath('*/a/@href').get()
+            yield response.follow(f"{self.BASE_URL}{generation_url}", callback=self.parse_car_details)
+
     def parse_modifications(self, response):
         modifications_urls = response.xpath("//th/a/@href").get()
         for mod in modifications_urls:
             yield response.follow(f"{self.BASE_URL}{mod}", callback=self.parse_car_details)
-
-
 
     def parse_car_details(self):
         pass

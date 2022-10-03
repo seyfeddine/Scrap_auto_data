@@ -85,6 +85,5 @@ class CarDetailsItem(scrapy.Item):
 
     # Drivetrain, brakes and suspension specs
     number_of_gears = scrapy.Field()
-    
 
-    pass
+

@@ -6,8 +6,13 @@
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
+from .items import *
 
 
 class AutoDataPipeline:
     def process_item(self, item, spider):
-        return item
+        if item.__class__ == GenerationItem:
+            print(f"{item}-->{item.__class__.__name__}")
+
+        elif item.__class__ == GenerationItem:
+            pass
