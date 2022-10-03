@@ -1,5 +1,5 @@
 import scrapy
-from ..items import BrandsItem, GenerationItem, ModelsItem
+from ..items import BrandsItem, GenerationItem, ModelsItem, ModificationItem
 # from helpers import detailsMapper
 
 
@@ -56,8 +56,16 @@ class CarUrlSpider(scrapy.Spider):
             yield response.follow(f"{self.BASE_URL}{generation_url}", callback=self.parse_car_details)
 
     def parse_modifications(self, response):
-        modifications_urls = response.xpath("//th/a/@href").get()
-        for mod in modifications_urls:
+        modifications_trs = response.xpath('//table[@class="carlist"]/tr[@class="i lred"]') 
+        for mod in modifications_trs:
+            mod_item = ModificationItem()
+            mod_item["name"] = mod.xpath('th[@class="i"]/*/*/span[@class="tit"]/text()').get()
+            mod_item["start_year"], mod_item["end_year"] = mod.xpath(
+                'th[@class="i"]/*/*/span[@class="end"]/text()'
+                ).get().split(' - ')
+            mod_item["details"] = ' | '.join(mod.xpath('td[@class="i"]/a[@rel="nofollow"]/text()').getall())
+            yield mod_item
+            mod_url = mod.xpath('th/a/@href').get()
             yield response.follow(f"{self.BASE_URL}{mod}", callback=self.parse_car_details)
 
     def parse_car_details(self):

@@ -27,7 +27,7 @@ class GenerationItem(scrapy.Item):
     details = scrapy.Field()
     pass
 
-class SpecsItem(scrapy.Item):
+class ModificationItem(scrapy.Item):
     name = scrapy.Field()
     start_year = scrapy.Field()
     end_year = scrapy.Field()
