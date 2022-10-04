@@ -11,12 +11,10 @@ from scrapy.item import Item,Field
 class BrandsItem(scrapy.Item):
     name = scrapy.Field()
     logo = scrapy.Field()
-    pass
 
 class ModelsItem(scrapy.Item):
     name = scrapy.Field()
     thumbnail = scrapy.Field()
-    pass
 
 class GenerationItem(scrapy.Item):
     name = scrapy.Field()
@@ -25,16 +23,17 @@ class GenerationItem(scrapy.Item):
     end_year = scrapy.Field()
     body_type = scrapy.Field()
     details = scrapy.Field()
-    pass
 
 class ModificationItem(scrapy.Item):
     name = scrapy.Field()
     start_year = scrapy.Field()
     end_year = scrapy.Field()
     details = scrapy.Field()
-    pass
 
 class CarDetailsItem(scrapy.Item):
+
+    # images
+    images = scrapy.Field()
 
     # general
     brand = scrapy.Field()

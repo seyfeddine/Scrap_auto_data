@@ -9,10 +9,9 @@ from itemadapter import ItemAdapter
 from .items import *
 
 
+
 class AutoDataPipeline:
     def process_item(self, item, spider):
-        if item.__class__ == GenerationItem:
+        if item.__class__ == CarDetailsItem:
             print(f"{item}-->{item.__class__.__name__}")
 
-        elif item.__class__ == GenerationItem:
-            pass

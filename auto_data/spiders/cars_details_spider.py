@@ -1,6 +1,6 @@
 import scrapy
-from ..items import BrandsItem, GenerationItem, ModelsItem, ModificationItem
-# from helpers import detailsMapper
+from ..items import BrandsItem, CarDetailsItem, GenerationItem, ModelsItem, ModificationItem
+from .helpers import detailsMapper
 
 
 class CarUrlSpider(scrapy.Spider):
@@ -32,7 +32,7 @@ class CarUrlSpider(scrapy.Spider):
             model_item["thumbnail"] = model.xpath('img/@src').get()
             yield model_item
             model_url = model.xpath("@href").get()
-            yield response.follow(f"{self.BASE_URL}{model_url}", callback=self.parse_models)
+            yield response.follow(f"{self.BASE_URL}{model_url}", callback=self.parse_generations)
 
     def parse_generations(self, response):
         generations_trs = response.xpath(
@@ -42,31 +42,46 @@ class CarUrlSpider(scrapy.Spider):
             generation_item["name"] = generation.xpath(
                 'th[@class="i"]/a[@class="position" and not(@rel = "nofollow")]/strong/text()'
             ).get()
-            generation_item["thumnail_url"] = generation.xpath(
+            generation_item["thumbnail_url"] = self.BASE_URL + generation.xpath(
                 'th[@class="i"]/*/img/@src').get()
-            generation_item["start_year"], generation_item["end_year"] = generation.xpath(
+            generation_years = generation.xpath(
                 'td[@class="i"]/*/strong[@class="end"]/text()'
-            ).get().split(' - ')
+            ).get()
+            generation_item["start_year"], generation_item["end_year"] = generation_years.split(' - ') if generation_years else ('','')
             generation_item["body_type"] = generation.xpath(
                 'td[@class="i"]/*/strong[@class="chas"]/text()').get()
             generation_item["details"] = generation.xpath(
                 'td[@class="i"]/*/span/text()').getall()
             yield generation_item
             generation_url = generation.xpath('*/a/@href').get()
-            yield response.follow(f"{self.BASE_URL}{generation_url}", callback=self.parse_car_details)
+            yield response.follow(f"{self.BASE_URL}{generation_url}", callback=self.parse_modifications)
 
     def parse_modifications(self, response):
-        modifications_trs = response.xpath('//table[@class="carlist"]/tr[@class="i lred"]') 
+        modifications_trs = response.xpath(
+            '//table[@class="carlist"]/tr[@class="i lred"]')
         for mod in modifications_trs:
             mod_item = ModificationItem()
-            mod_item["name"] = mod.xpath('th[@class="i"]/*/*/span[@class="tit"]/text()').get()
+            mod_item["name"] = mod.xpath(
+                'th[@class="i"]/*/*/span[@class="tit"]/text()').get()
             mod_item["start_year"], mod_item["end_year"] = mod.xpath(
                 'th[@class="i"]/*/*/span[@class="end"]/text()'
-                ).get().split(' - ')
-            mod_item["details"] = ' | '.join(mod.xpath('td[@class="i"]/a[@rel="nofollow"]/text()').getall())
+            ).get().split(' - ')
+            mod_item["details"] = ' | '.join(
+                mod.xpath('td[@class="i"]/a[@rel="nofollow"]/text()').getall())
             yield mod_item
             mod_url = mod.xpath('th/a/@href').get()
-            yield response.follow(f"{self.BASE_URL}{mod}", callback=self.parse_car_details)
+            yield response.follow(f"{self.BASE_URL}{mod_url}", callback=self.parse_car_details)
 
-    def parse_car_details(self):
-        pass
+    def parse_car_details(self, response):
+        car_details_trs = response.xpath(
+            '//table[@class="cardetailsout car2"]/tr[not(@class)]')
+        car_det_item = CarDetailsItem()
+        car_det_item["images"] = [ self.BASE_URL+ "/images/" +line.split('"')[1] for line in response.xpath('//div[@id="outer"]/script[not(@src)]/text()').get().split('\n') if "bigs" in line and "jpg" in line]
+        for car_det_tr in car_details_trs:
+            car_det_th = car_det_tr.xpath("th/text()").get()
+            car_det_td = car_det_tr.xpath("td")[0]
+            if car_det_th in detailsMapper.keys():
+                car_det_item[detailsMapper[car_det_th]] = ' | '.join(
+                    car_det_td.xpath("text() | */text()").getall()
+                    ).replace('\r\n', '').replace('\t', '').strip()
+        return car_det_item
