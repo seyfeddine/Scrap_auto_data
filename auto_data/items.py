@@ -1,8 +1,3 @@
-# Define here the models for your scraped items
-#
-# See documentation in:
-# https://docs.scrapy.org/en/latest/topics/items.html
-
 import scrapy
 from scrapy.item import Item,Field
 
@@ -15,22 +10,27 @@ class BrandsItem(scrapy.Item):
 class ModelsItem(scrapy.Item):
     name = scrapy.Field()
     thumbnail = scrapy.Field()
+    brand_name = scrapy.Field()
 
 class GenerationItem(scrapy.Item):
     name = scrapy.Field()
-    thumbnail_url = scrapy.Field()
+    thumbnail = scrapy.Field()
     start_year = scrapy.Field()
     end_year = scrapy.Field()
     body_type = scrapy.Field()
     details = scrapy.Field()
+    model_name = scrapy.Field()
 
 class ModificationItem(scrapy.Item):
     name = scrapy.Field()
     start_year = scrapy.Field()
     end_year = scrapy.Field()
     details = scrapy.Field()
+    generation_name = scrapy.Field()
 
 class CarDetailsItem(scrapy.Item):
+
+    modification_name = scrapy.Field()
 
     # images
     images = scrapy.Field()
